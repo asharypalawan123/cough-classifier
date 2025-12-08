@@ -24,7 +24,7 @@ export function Logo({
       <div className="flex items-center justify-center rounded-xl gradient-primary p-2 shadow-soft">
         <Activity className={`${iconSizes[size]} text-primary-foreground`} />
       </div>
-      <span className={`font-bold tracking-tight text-foreground ${textSizes[size]}`}>CoughSense<span className="text-primary">Sense</span>
+      <span className={`font-bold tracking-tight text-foreground ${textSizes[size]}`}>Cough<span className="text-primary">Sense</span>
       </span>
     </div>;
 }
