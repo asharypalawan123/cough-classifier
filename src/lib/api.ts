@@ -36,6 +36,9 @@ async function blobToBase64(blob: Blob): Promise<string> {
 export async function classifyCough(audioBlob: Blob): Promise<PredictionResponse> {
   const base64Audio = await blobToBase64(audioBlob);
 
+  console.log('API_BASE_URL:', API_BASE_URL);
+  console.log('Sending request to:', `${API_BASE_URL}/predict`);
+
   const response = await fetch(`${API_BASE_URL}/predict`, {
     method: 'POST',
     headers: {
@@ -44,12 +47,19 @@ export async function classifyCough(audioBlob: Blob): Promise<PredictionResponse
     body: JSON.stringify({ audio: base64Audio }),
   });
 
+  const responseText = await response.text();
+  console.log('Response status:', response.status);
+  console.log('Response text:', responseText.substring(0, 200));
+
   if (!response.ok) {
-    const error: ApiError = await response.json();
-    throw new Error(error.detail || 'Failed to classify cough');
+    throw new Error(`API Error (${response.status}): ${responseText.substring(0, 100)}`);
   }
 
-  return response.json();
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+  }
 }
 
 /**
