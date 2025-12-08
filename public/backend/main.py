@@ -55,7 +55,7 @@ def load_models():
     """Load trained model, scaler, and configuration"""
     global model, scaler, config
     
-    model_dir = "public/backend/model"
+    model_dir = "/home/ubuntu/coughsense_project/ml_training/trained_model"
     
     try:
         # Load model
