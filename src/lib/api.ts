@@ -1,7 +1,7 @@
 // API configuration for connecting to the Python backend
 // Set VITE_API_URL in your environment variables when deploying
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://cough-classifier-production.up.railway.app';
 
 export interface PredictionResponse {
   predicted_cough_type: 'dry' | 'wet';
@@ -37,9 +37,9 @@ export async function classifyCough(audioBlob: Blob): Promise<PredictionResponse
   const base64Audio = await blobToBase64(audioBlob);
 
   console.log('API_BASE_URL:', API_BASE_URL);
-  console.log('Sending request to:', `${API_BASE_URL}/predict`);
+  console.log('Sending request to:', `${API_BASE_URL}`);
 
-  const response = await fetch(`${API_BASE_URL}/predict`, {
+  const response = await fetch(`${API_BASE_URL}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
