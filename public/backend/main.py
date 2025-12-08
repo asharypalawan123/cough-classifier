@@ -30,6 +30,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, specify allowed origins
+    allow_origins=["https://cough-classifier-vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
