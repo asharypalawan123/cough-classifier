@@ -213,6 +213,30 @@ async def health():
         "config_loaded": config is not None
     }
 
+@app.get("/model-status")
+async def model_status():
+    """Detailed model status for debugging"""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    model_dir = os.path.join(script_dir, "model")
+    
+    model_path = os.path.join(model_dir, "cough_classifier_model.pkl")
+    scaler_path = os.path.join(model_dir, "feature_scaler.pkl")
+    config_path = os.path.join(model_dir, "model_config.json")
+    
+    return {
+        "script_dir": script_dir,
+        "model_dir": model_dir,
+        "model_dir_exists": os.path.exists(model_dir),
+        "model_file_exists": os.path.exists(model_path),
+        "scaler_file_exists": os.path.exists(scaler_path),
+        "config_file_exists": os.path.exists(config_path),
+        "model_loaded_in_memory": model is not None,
+        "scaler_loaded_in_memory": scaler is not None,
+        "config_loaded_in_memory": config is not None,
+        "files_in_model_dir": os.listdir(model_dir) if os.path.exists(model_dir) else [],
+        "files_in_script_dir": os.listdir(script_dir)
+    }
+
 @app.post("/predict", response_model=PredictionResponse)
 async def predict_cough(request: PredictionRequest):
     """
@@ -225,34 +249,46 @@ async def predict_cough(request: PredictionRequest):
         PredictionResponse with predicted_cough_type and confidence_score
     """
     if model is None or scaler is None:
-        raise HTTPException(status_code=503, detail="ML model not loaded")
+        raise HTTPException(status_code=503, detail="ML model not loaded. Check /model-status endpoint.")
     
     try:
         # Decode base64 audio
+        print(f"Received audio data length: {len(request.audio)} characters")
         audio_data = base64.b64decode(request.audio)
+        print(f"Decoded audio size: {len(audio_data)} bytes")
         
-        # Save to temporary file
-        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
+        # Save to temporary file - try multiple formats
+        # Browser typically sends webm, but we'll try to handle it
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
             temp_file.write(audio_data)
             temp_path = temp_file.name
         
+        print(f"Saved audio to: {temp_path}")
+        
         try:
             # Extract features
+            print("Extracting audio features...")
             features = extract_audio_features(temp_path)
             
             if features is None:
-                raise HTTPException(status_code=400, detail="Failed to extract audio features")
+                raise HTTPException(status_code=400, detail="Failed to extract audio features. The audio format may not be supported.")
+            
+            print(f"Extracted {len(features)} features")
             
             # Reshape and scale features
             features_scaled = scaler.transform(features.reshape(1, -1))
+            print("Features scaled successfully")
             
             # Make prediction
             prediction = model.predict(features_scaled)[0]
             prediction_proba = model.predict_proba(features_scaled)[0]
+            print(f"Prediction: {prediction}, Probabilities: {prediction_proba}")
             
             # Get predicted class and confidence
             cough_type = config['label_mapping'][str(prediction)]
             confidence = float(prediction_proba[prediction] * 100)  # Convert to percentage
+            
+            print(f"Result: {cough_type} with {confidence}% confidence")
             
             return PredictionResponse(
                 predicted_cough_type=cough_type,
@@ -265,9 +301,14 @@ async def predict_cough(request: PredictionRequest):
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
     
+    except HTTPException:
+        raise
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
         print(f"Prediction error: {e}")
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+        print(f"Full traceback:\n{error_details}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}. Check server logs for details.")
 
 if __name__ == "__main__":
     import uvicorn
