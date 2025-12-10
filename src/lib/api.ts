@@ -39,7 +39,7 @@ export async function classifyCough(audioBlob: Blob): Promise<PredictionResponse
   console.log('API_BASE_URL:', API_BASE_URL);
   console.log('Sending request to:', `${API_BASE_URL}`);
 
-  const response = await fetch(`${API_BASE_URL}`, {
+  const response = await fetch(`${API_BASE_URL}/predict`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

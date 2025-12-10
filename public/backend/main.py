@@ -29,7 +29,7 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://cough-classifier-vercel.app"],
+    allow_origins=["*"],  # Allow all origins - update with specific domains in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
