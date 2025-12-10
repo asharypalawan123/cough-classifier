@@ -54,11 +54,18 @@ def load_models():
     """Load trained model, scaler, and configuration"""
     global model, scaler, config
     
-    model_dir = "/home/ubuntu/coughsense_project/ml_training/trained_model"
+    # Use relative path from the script location
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    model_dir = os.path.join(script_dir, "model")
+    
+    print(f"Script directory: {script_dir}")
+    print(f"Model directory: {model_dir}")
+    print(f"Model dir exists: {os.path.exists(model_dir)}")
     
     try:
         # Load model
         model_path = os.path.join(model_dir, "cough_classifier_model.pkl")
+        print(f"Looking for model at: {model_path}")
         model = joblib.load(model_path)
         print(f"✓ Model loaded from: {model_path}")
         
@@ -76,6 +83,8 @@ def load_models():
         return True
     except Exception as e:
         print(f"✗ Error loading models: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def extract_audio_features(audio_path, target_duration=5.0, sr=22050):
