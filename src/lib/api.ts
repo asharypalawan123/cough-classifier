@@ -34,31 +34,44 @@ async function blobToBase64(blob: Blob): Promise<string> {
  * Send audio file to backend for classification
  */
 export async function classifyCough(audioBlob: Blob): Promise<PredictionResponse> {
+  // First check if backend is available
+  const isHealthy = await checkApiHealth();
+  if (!isHealthy) {
+    throw new Error('Backend server is not available. Please ensure the Railway backend is deployed and running.');
+  }
+
   const base64Audio = await blobToBase64(audioBlob);
 
   console.log('API_BASE_URL:', API_BASE_URL);
-  console.log('Sending request to:', `${API_BASE_URL}`);
-
-  const response = await fetch(`${API_BASE_URL}/predict`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ audio: base64Audio }),
-  });
-
-  const responseText = await response.text();
-  console.log('Response status:', response.status);
-  console.log('Response text:', responseText.substring(0, 200));
-
-  if (!response.ok) {
-    throw new Error(`API Error (${response.status}): ${responseText.substring(0, 100)}`);
-  }
+  console.log('Sending request to:', `${API_BASE_URL}/predict`);
 
   try {
-    return JSON.parse(responseText);
-  } catch {
-    throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+    const response = await fetch(`${API_BASE_URL}/predict`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ audio: base64Audio }),
+    });
+
+    const responseText = await response.text();
+    console.log('Response status:', response.status);
+    console.log('Response text:', responseText.substring(0, 200));
+
+    if (!response.ok) {
+      throw new Error(`API Error (${response.status}): ${responseText.substring(0, 100)}`);
+    }
+
+    try {
+      return JSON.parse(responseText);
+    } catch {
+      throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+    }
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Network error: Unable to connect to the backend. Check CORS settings and server availability.');
+    }
+    throw error;
   }
 }
 
