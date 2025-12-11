@@ -1,6 +1,8 @@
 // API configuration for connecting to the Python backend
 // Set VITE_API_URL in your environment variables when deploying
 
+import { convertToWav } from './audioUtils';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://cough-classifier-production.up.railway.app';
 
 export interface PredictionResponse {
@@ -40,7 +42,12 @@ export async function classifyCough(audioBlob: Blob): Promise<PredictionResponse
     throw new Error('Backend server is not available. Please ensure the Railway backend is deployed and running.');
   }
 
-  const base64Audio = await blobToBase64(audioBlob);
+  // Convert to WAV format for better compatibility with librosa
+  console.log('Converting audio to WAV format...');
+  const wavBlob = await convertToWav(audioBlob);
+  console.log('Converted to WAV, size:', wavBlob.size);
+
+  const base64Audio = await blobToBase64(wavBlob);
 
   console.log('API_BASE_URL:', API_BASE_URL);
   console.log('Sending request to:', `${API_BASE_URL}/predict`);
