@@ -1,14 +1,19 @@
 /**
  * Convert audio blob to WAV format using Web Audio API
+ * Falls back to original blob if conversion fails (mobile compatibility)
  */
-export async function convertToWav(audioBlob: Blob): Promise<Blob> {
+export async function convertToWav(audioBlob: Blob): Promise<{ blob: Blob; converted: boolean }> {
   const audioContext = new AudioContext();
   const arrayBuffer = await audioBlob.arrayBuffer();
   
   try {
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
     const wavBuffer = audioBufferToWav(audioBuffer);
-    return new Blob([wavBuffer], { type: 'audio/wav' });
+    return { blob: new Blob([wavBuffer], { type: 'audio/wav' }), converted: true };
+  } catch (error) {
+    console.warn('WAV conversion failed, using original format:', error);
+    // Return original blob if conversion fails (common on mobile)
+    return { blob: audioBlob, converted: false };
   } finally {
     await audioContext.close();
   }
